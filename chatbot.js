@@ -56,31 +56,35 @@ async function startBot() {
 
     const sender = msg.key.remoteJid;
 
-  // Unpack kalau pesan ephemeral 
-  let messageContent = msg.message;
-  if (messageContent.ephemeralMessage) {
-    messageContent = messageContent.ephemeralMessage.message;
-  }
+    // ✅ Deteksi apakah pesan ephemeral
+    if (msg.message.ephemeralMessage) {
+      await sock.sendMessage(sender, {
+        text: '⚠️ Pesan sementara terdeteksi, mohon nonaktifkan opsi pesan sementara untuk menggunakan layanan ini.'
+      });
+      return; // hentikan eksekusi, jangan diproses ke bawah
+    }
 
-  // Ambil isi pesan
-  let pesan = null;
-  if (messageContent.conversation) {
-    pesan = messageContent.conversation;
-  } else if (messageContent.extendedTextMessage?.text) {
-    pesan = messageContent.extendedTextMessage.text;
-  } else if (messageContent.imageMessage) {
-    pesan = '[gambar]';
-  } else if (messageContent.stickerMessage) {
-    pesan = '[stiker]';
-  }
+    // Ambil isi pesan
+    let messageContent = msg.message;
+    let pesan = null;
 
-  console.log(`📩 Pesan dari ${sender}: ${pesan}`);
+    if (messageContent.conversation) {
+      pesan = messageContent.conversation;
+    } else if (messageContent.extendedTextMessage?.text) {
+      pesan = messageContent.extendedTextMessage.text;
+    } else if (messageContent.imageMessage) {
+      pesan = '[gambar]';
+    } else if (messageContent.stickerMessage) {
+      pesan = '[stiker]';
+    }
 
-  // Kalau bukan teks, balas sekali saja 
-  if (!pesan || pesan === '[gambar]' || pesan === '[stiker]') {
-    await sock.sendMessage(sender, { text: '🙏 Maaf, untuk saat ini bot hanya bisa membaca pesan teks. Silahkan ketik *Info* untuk layanan.' });
-    return;
-  }
+    console.log(`📩 Pesan dari ${sender}: ${pesan}`);
+
+    // Kalau bukan teks, balas default
+    if (!pesan || pesan === '[gambar]' || pesan === '[stiker]') {
+      await sock.sendMessage(sender, { text: '🙏 Maaf, untuk saat ini bot hanya bisa membaca pesan teks. Silahkan ketik *Info* untuk layanan.' });
+      return;
+    }
 
     let balasan = '';
 
@@ -111,6 +115,6 @@ async function startBot() {
 
     await sock.sendMessage(sender, { text: balasan });
   });
-  }
-    
-    startBot();
+}
+
+startBot();

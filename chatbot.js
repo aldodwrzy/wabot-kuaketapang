@@ -56,27 +56,31 @@ async function startBot() {
 
     const sender = msg.key.remoteJid;
 
-    // Deteksi jenis pesan
-    let pesan = null;
-    if (msg.message.conversation) {
-      pesan = msg.message.conversation;
-    } else if (msg.message.extendedTextMessage?.text) {
-      pesan = msg.message.extendedTextMessage.text;
-    } else if (msg.message.imageMessage) {
-      pesan = '[gambar]';
-    } else if (msg.message.stickerMessage) {
-      pesan = '[stiker]';
-    } else if (msg.message.ephemeralMessage) {
-      pesan = '[pesan sementara]';
-    }
+  // Unpack kalau pesan ephemeral 
+  let messageContent = msg.message;
+  if (messageContent.ephemeralMessage) {
+    messageContent = messageContent.ephemeralMessage.message;
+  }
 
-    console.log(`📩 Pesan dari ${sender}: ${pesan}`);
+  // Ambil isi pesan
+  let pesan = null;
+  if (messageContent.conversation) {
+    pesan = messageContent.conversation;
+  } else if (messageContent.extendedTextMessage?.text) {
+    pesan = messageContent.extendedTextMessage.text;
+  } else if (messageContent.imageMessage) {
+    pesan = '[gambar]';
+  } else if (messageContent.stickerMessage) {
+    pesan = '[stiker]';
+  }
 
-    // Kalau bukan teks, balas default biar service tidak error
-    if (!pesan || pesan.startsWith('[')) {
-      await sock.sendMessage(sender, { text: '🙏 Maaf, untuk saat ini bot hanya bisa membaca pesan teks. Silahkan ketik *Info* untuk layanan.' });
-      return;
-    }
+  console.log(`📩 Pesan dari ${sender}: ${pesan}`);
+
+  // Kalau bukan teks, balas sekali saja 
+  if (!pesan || pesan === '[gambar]' || pesan === '[stiker]') {
+    await sock.sendMessage(sender, { text: '🙏 Maaf, untuk saat ini bot hanya bisa membaca pesan teks. Silahkan ketik *Info* untuk layanan.' });
+    return;
+  }
 
     let balasan = '';
 

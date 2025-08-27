@@ -52,29 +52,35 @@ async function startBot() {
     if (type !== 'notify') return;
 
     const msg = messages[0];
-
     if (!msg.message || msg.key.fromMe) return;
 
     const sender = msg.key.remoteJid;
-    const pesan = msg.message.conversation || msg.message.extendedTextMessage?.text;
+
+    // Deteksi jenis pesan
+    let pesan = null;
+    if (msg.message.conversation) {
+      pesan = msg.message.conversation;
+    } else if (msg.message.extendedTextMessage?.text) {
+      pesan = msg.message.extendedTextMessage.text;
+    } else if (msg.message.imageMessage) {
+      pesan = '[gambar]';
+    } else if (msg.message.stickerMessage) {
+      pesan = '[stiker]';
+    } else if (msg.message.ephemeralMessage) {
+      pesan = '[pesan sementara]';
+    }
 
     console.log(`📩 Pesan dari ${sender}: ${pesan}`);
 
+    // Kalau bukan teks, balas default biar service tidak error
+    if (!pesan || pesan.startsWith('[')) {
+      await sock.sendMessage(sender, { text: '🙏 Maaf, untuk saat ini bot hanya bisa membaca pesan teks. Silahkan ketik *Info* untuk layanan.' });
+      return;
+    }
+
     let balasan = '';
 
-    // Contoh jawaban otomatis
-//     if (pesan.toLowerCase()=='halo') {
-//       balasan = '*Cinta sejati jangan ditunda, Daftarkan Nikah anda di KUA💕*\n\nTerimakasih telah menghubungi SAPA KUA Ketapang, silahkan pilih layanan yang ingin anda ketahui…\n- Informasi Seputar Pernikahan Ketik *Nikah*\n- Informasi Seputar Tanah wakaf Ketik *Wakaf*\n- Konsultasi KUA Ketik *Konsul*';
-//     } else if (pesan.toLowerCase()=='nikah') {
-//       balasan = '*Bukan hanya cukup ijab dan qabul, tapi pastikan cinta kalian tercatat di KUA. Karena cinta sejati juga butuh legalitas.💍*\nInformasi apa yang ingin anda ketahui:\n- Alur pendaftaran Nikah ketik *Alur*\n- Syarat Nikah ketik *Syarat\nRukun Nikah ketik *Alur';
-//     } else {
-//       balasan = 'Terima kasih telah menghubungi kami! Tim kami akan segera merespons pesan Anda.';
-//     }
-
-//     await sock.sendMessage(sender, { text: balasan });
-//   });
-// }
-
+    // Respon otomatis
     if (pesan.toLowerCase() == 'info') {
       balasan = '*Cinta sejati jangan ditunda, Daftarkan Nikah anda di KUA💕*\n\nSilahkan pilih layanan yang ingin anda ketahui…\n- Informasi Seputar Pernikahan Ketik *Nikah*\n- Informasi Seputar Tanah wakaf Ketik *Wakaf*\n- Konsultasi KUA Ketik *Konsul*';
     } else if (pesan.toLowerCase() == 'nikah') {
@@ -98,9 +104,9 @@ async function startBot() {
     } else {
       balasan = 'Terimakasih telah menghubungi SAPA KUA Ketapang, silahkan ketik *Info* untuk memilih layanan';
     }
-    
+
     await sock.sendMessage(sender, { text: balasan });
-    });
+  });
   }
     
     startBot();
